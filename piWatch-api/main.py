@@ -73,6 +73,7 @@ def connect():
 #     Peticiones    #
 #===================#
 
+
 #
 #   ->  POSTS
 #
@@ -102,6 +103,7 @@ async def checkPassword(userCredentials : UserCredentials):
     finally:
         if conn is not None:
             conn.close()
+
 
     #   publicación horarios vigilancia
 @app.post("/{user}/schedule")
@@ -138,7 +140,7 @@ async def checkPassword(schedule : Schedule):
     #   Consulta del horario del usuario
 @app.get("/{user}/timetables")
 async def checkData():
-    print("Se han solicitado la tabla del usuario")
+    print("Se han solicitado los horarios del usuario")
     sentenciaSQL="""SELECT * FROM WATCHSCHEDULE WHERE SCHEDULEUSER = %s"""
     conn = None
     try:

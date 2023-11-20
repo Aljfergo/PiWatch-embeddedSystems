@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=piwatch
+      - POSTGRES_PASSWORD=piwatch
+      - POSTGRES_DB=piwatch
+    ports:
+      - '5432:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+  backend:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000" 
+    volumes:
+      - .:/app
+volumes:
+  db:
+    driver: local

@@ -162,7 +162,21 @@ async def checkData():
     finally:
         if conn is not None:
             conn.close()
-    
+
+
+
+#========================#
+#     Actualizaciones    #
+#========================#
+
+#
+#   ->  PUTS
+#
+
+
+
+
+
 if __name__ == '__main__':
     import uvicorn
     print('\n\n\n\n')

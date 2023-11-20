@@ -46,6 +46,8 @@ class Schedule(BaseModel):
 
 def connect():
     conn=None
+
+    print("Conecta o no conecta pero hay que saberlo")
     
     try:
         params=config()

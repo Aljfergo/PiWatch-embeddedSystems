@@ -24,6 +24,7 @@ CREATE TABLE "INCIDENTS"
     "IDINCIDENT"               uuid DEFAULT uuid_generate_v4(),
     "TIMESTAMPINCIDENTS"       INT NOT NULL,
     "INCIDENTPIC"              VARCHAR(50) DEFAULT NULL,
+    "SEVERITY"                 INT DEFAULT NULL,   
     PRIMARY KEY ("IDINCIDENT")
 )
 

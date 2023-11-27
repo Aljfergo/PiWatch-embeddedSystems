@@ -67,12 +67,20 @@ def connect():
         print(db_version)
         print('\n')
         print(Fore.GREEN+"->Base de datos conectada correctamente\n\n")
+
+        with open("bdd/piwatch_structure.sql", "r") as script_file:
+            cur.execute(script_file.read())
+            
+            print("Tablas creadas con éxito")
+        
         cur.close()
+        conn.commit()
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
         if conn is not None:
             conn.close()
+
 
     
 
@@ -286,17 +294,17 @@ async def checkData():
     #TO-DO
     
     #   get de incidentes //////////////////////////////////////////// NO ENTIENDO BIEN QUÉ HAY QUE HACER AQUÍ
-@app.get("/{user}/incidents")
+@app.get("/incidents")
 async def checkData():
     print("Se han solicitado los incidentes del sistema correspondientes al usuario")
-    sentenciaSQL="""SELECT * FROM INCIDENTS WHERE NAMEUSER = %s""" #Se ven los incidentes del usuario seleccionado
+    sentenciaSQL="""SELECT * FROM INCIDENTS """ #Se ven los incidentes del usuario seleccionado
     conn = None
     try:
         params=config()
         conn =psycopg2.connect(**params)
         cur=conn.cursor()
 
-        cur.execute(sentenciaSQL, (user))
+        cur.execute(sentenciaSQL)
         user= cur.fetchone()
         cur.close()
 

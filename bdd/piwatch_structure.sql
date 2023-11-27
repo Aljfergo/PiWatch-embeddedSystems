@@ -1,5 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+DROP TABLE "USER", "LOGINATTEMPT", "INCIDENTS", "WATCHSCHEDULE";
+
 CREATE TABLE "USER"
 (
     "IDUSER"                   uuid DEFAULT uuid_generate_v4(),

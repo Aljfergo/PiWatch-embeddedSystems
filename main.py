@@ -110,7 +110,7 @@ async def registerUser(userCredentials: UserCredentials):
     return {"mensaje": "Usuario registrado exitosamente"}
 
 def check_user_exists(username):
-    sentenciaSQL = "SELECT * FROM USERS WHERE NAMEUSER = %s"
+    sentenciaSQL = """SELECT * FROM "USER" WHERE "NAMEUSER" = %s"""
     conn = None
     
     try:
@@ -132,7 +132,7 @@ def check_user_exists(username):
             conn.close()
 
 def insert_user(username, password):
-    sentenciaSQL = "INSERT INTO USERS (NAMEUSER, PASSWORDUSER) VALUES (%s, %s)"
+    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER") VALUES (%s, %s)"""
     conn = None
     
     try:
@@ -209,7 +209,7 @@ def insert_incident(title, description, severity):
 @app.post("/login")
 async def checkPassword(userCredentials : UserCredentials):
     print("Se ha recibido el intento de inicio de sesión por parte del usuario "+userCredentials.username)
-    sentenciaSQL="""SELECT * FROM USERS WHERE NAMEUSER = %s AND PASSWORDUSER = %s"""
+    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND PASSWORDUSER = %s"""
     conn = None
     try:
         params=config()

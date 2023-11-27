@@ -38,9 +38,9 @@ class Schedule(BaseModel):
     scheduleEnd: str
 
 class Incident(BaseModel):
-    title: str
-    description: str
-    severity: str
+    timestamp: str
+    incidentpic: str
+    severity: int
 
 
 
@@ -67,12 +67,20 @@ def connect():
         print(db_version)
         print('\n')
         print(Fore.GREEN+"->Base de datos conectada correctamente\n\n")
+
+        with open("bdd/piwatch_structure.sql", "r") as script_file:
+            cur.execute(script_file.read())
+            
+            print("Tablas creadas con éxito")
+        
         cur.close()
+        conn.commit()
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
         if conn is not None:
             conn.close()
+
 
     
 
@@ -102,7 +110,7 @@ async def registerUser(userCredentials: UserCredentials):
     return {"mensaje": "Usuario registrado exitosamente"}
 
 def check_user_exists(username):
-    sentenciaSQL = "SELECT * FROM users WHERE username = %s"
+    sentenciaSQL = """SELECT * FROM "USER" WHERE "NAMEUSER" = %s"""
     conn = None
     
     try:
@@ -124,7 +132,7 @@ def check_user_exists(username):
             conn.close()
 
 def insert_user(username, password):
-    sentenciaSQL = "INSERT INTO users (username, password) VALUES (%s, %s)"
+    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER") VALUES (%s, %s)"""
     conn = None
     
     try:
@@ -145,7 +153,7 @@ def insert_user(username, password):
 
 
 
-        #post de intento de registro (subir un intento de inicio de sesión) ????????
+        #post de registro de inicio de sesión
         #
         #
         #
@@ -171,12 +179,12 @@ async def create_incident(incident: Incident):
     print("Se ha recibido un nuevo incidente: " +incident.title)
 
     # Insertar el incidente en la base de datos
-    insert_incident(incident.title, incident.description, incident.severity)
+    insert_incident(incident.timestamp, incident.incidentpic, incident.severity)
 
     return {"mensaje": "Incidente registrado exitosamente"}
 
 def insert_incident(title, description, severity):
-    sentenciaSQL = "INSERT INTO incidents (title, description, severity) VALUES (%s, %s, %s)"
+    sentenciaSQL = "INSERT INTO INCIDENTS (TIMESTAMPINCIDENTS, INCIDENTPIC, SEVERITY) VALUES (%s, %s, %s)"
     conn = None
 
     try:
@@ -201,7 +209,7 @@ def insert_incident(title, description, severity):
 @app.post("/login")
 async def checkPassword(userCredentials : UserCredentials):
     print("Se ha recibido el intento de inicio de sesión por parte del usuario "+userCredentials.username)
-    sentenciaSQL="""SELECT * FROM users WHERE username = %s AND password = %s"""
+    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND PASSWORDUSER = %s"""
     conn = None
     try:
         params=config()
@@ -288,8 +296,8 @@ async def checkData():
     #   get de incidentes //////////////////////////////////////////// NO ENTIENDO BIEN QUÉ HAY QUE HACER AQUÍ
 @app.get("/incidents")
 async def checkData():
-    print("Se han solicitado los incidentes del sistema")
-    sentenciaSQL="""SELECT * FROM INCIDENTES""" #Hay algún filtro para los incidentes??
+    print("Se han solicitado los incidentes del sistema correspondientes al usuario")
+    sentenciaSQL="""SELECT * FROM INCIDENTS """ #Se ven los incidentes del usuario seleccionado
     conn = None
     try:
         params=config()
@@ -325,8 +333,7 @@ async def checkData():
 @app.put("/{user}/schedule")
 async def checkPassword(schedule : Schedule):
     print("Se ha recibido una edición de horario por parte de: "+ user)
-    sentenciaSQL="""UPDATE "WATCHSCHEDULE" 
-                        WHERE SCHEDULEUSER= %s
+    sentenciaSQL="""UPDATE WATCHSCHEDULE WHERE SCHEDULEUSER= %s
                         SET SCHEDULESTART = %s,
                         SET SCHEDULEEND = %s"""
     conn = None
@@ -363,17 +370,16 @@ async def checkPassword(schedule : Schedule):
 
     #   Eliminar un horario ¿del usuario que ha realizado la acción?
 @app.delete("/{user}/schedule")
-async def checkPassword(schedule : Schedule):
+async def checkPassword(schedule : int):
     print("Se ha recibido una eliminación de horario por parte de: "+ user)
-    sentenciaSQL="""DELETE FROM "WATCHSCHEDULE" 
-                        WHERE SCHEDULEUSER= %s"""
+    sentenciaSQL="""DELETE FROM WATCHSCHEDULE WHERE IDSCHEDULE= %s"""
     conn = None
     try:
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (user,))
+        cur.execute(sentenciaSQL, (user))
         conn.commit() 
 
         cur.close()

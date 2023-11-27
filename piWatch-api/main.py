@@ -148,7 +148,7 @@ async def checkData():
         conn =psycopg2.connect(**params)
         cur=conn.cursor()
 
-        cur.execute(sentenciaSQL,(user)))
+        cur.execute(sentenciaSQL,(user))
         user= cur.fetchone()
         cur.close()
 
@@ -162,7 +162,21 @@ async def checkData():
     finally:
         if conn is not None:
             conn.close()
-    
+
+
+
+#========================#
+#     Actualizaciones    #
+#========================#
+
+#
+#   ->  PUTS
+#
+
+#   Edición de los horarios de vigilancia
+
+
+
 if __name__ == '__main__':
     import uvicorn
     print('\n\n\n\n')

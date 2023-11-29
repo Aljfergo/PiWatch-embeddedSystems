@@ -7,6 +7,7 @@ CREATE TABLE "USER"
     "IDUSER"                   uuid DEFAULT uuid_generate_v4(),
     "NAMEUSER"                 VARCHAR(100) NOT NULL,
     "PASSWORDUSER"             VARCHAR(100) NOT NULL,
+    "TOKENUSER"                VARCHAR(100) NOT NULL,
     "TIMESTAMPUSER"            TIMESTAMP    NOT NULL,
     PRIMARY KEY ("IDUSER")
 );

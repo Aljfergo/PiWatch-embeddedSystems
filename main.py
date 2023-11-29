@@ -4,6 +4,7 @@ from config import config
 from pydantic import BaseModel
 from colorama import Style,Fore, Back, init
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timedelta
 
 app=FastAPI()
 
@@ -31,6 +32,7 @@ app.add_middleware(
 class UserCredentials(BaseModel):
     username: str
     password: str
+    token: str
 
 
 class Schedule(BaseModel):
@@ -105,7 +107,7 @@ async def registerUser(userCredentials: UserCredentials):
         raise HTTPException(status_code=400, detail="El usuario ya existe. Elija otro nombre de usuario.")
     
     # Insertar el nuevo usuario en la base de datos
-    insert_user(userCredentials.username, userCredentials.password)
+    insert_user(userCredentials.username, userCredentials.password, userCredentials.token)
     
     return {"mensaje": "Usuario registrado exitosamente"}
 
@@ -131,8 +133,8 @@ def check_user_exists(username):
         if conn is not None:
             conn.close()
 
-def insert_user(username, password):
-    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER") VALUES (%s, %s)"""
+def insert_user(username, password, token):
+    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER", "TOKENUSER", "TIMESTAMPUSER") VALUES (%s, %s, %s, %s)"""
     conn = None
     
     try:
@@ -140,7 +142,11 @@ def insert_user(username, password):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (username, password))
+        #Hora española en el momento del registro
+        timestamp = datetime.now()
+        timestamp_sp = timestamp + timedelta(hours = 1)
+
+        cur.execute(sentenciaSQL, (username, password, token, timestamp_sp))
         conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -153,7 +159,7 @@ def insert_user(username, password):
 
 
 
-        #post de registro de inicio de sesión
+        #post de registro de intento de inicio de sesión
         #
         #
         #

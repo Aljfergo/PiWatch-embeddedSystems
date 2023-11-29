@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException
 import psycopg2
 from config import config
 from pydantic import BaseModel
-from colorama import Style,Fore, Back, init
+from colorama import Style, Fore, Back, init
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timedelta
 
 app=FastAPI()
 
@@ -31,6 +32,7 @@ app.add_middleware(
 class UserCredentials(BaseModel):
     username: str
     password: str
+    token: str
 
 
 class Schedule(BaseModel):
@@ -38,7 +40,7 @@ class Schedule(BaseModel):
     scheduleEnd: str
 
 class Incident(BaseModel):
-    timestamp: str
+    #timestamp: str
     incidentpic: str
     severity: int
 
@@ -93,8 +95,8 @@ def connect():
 #   ->  POSTS
 #
 
-    #   post de usuario (registro - sign in)
-@app.post("/signin")
+    #   Registro de usuario ----------------- FUNCIONAL
+@app.post("/signin") 
 async def registerUser(userCredentials: UserCredentials):
     print("Se ha recibido la solicitud de registro del usuario " + userCredentials.username)
     
@@ -105,7 +107,7 @@ async def registerUser(userCredentials: UserCredentials):
         raise HTTPException(status_code=400, detail="El usuario ya existe. Elija otro nombre de usuario.")
     
     # Insertar el nuevo usuario en la base de datos
-    insert_user(userCredentials.username, userCredentials.password)
+    insert_user(userCredentials.username, userCredentials.password, userCredentials.token)
     
     return {"mensaje": "Usuario registrado exitosamente"}
 
@@ -131,8 +133,8 @@ def check_user_exists(username):
         if conn is not None:
             conn.close()
 
-def insert_user(username, password):
-    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER") VALUES (%s, %s)"""
+def insert_user(username, password, token):
+    sentenciaSQL = """INSERT INTO "USER" ("NAMEUSER", "PASSWORDUSER", "TOKENUSER", "TIMESTAMPUSER") VALUES (%s, %s, %s, %s)"""
     conn = None
     
     try:
@@ -140,7 +142,11 @@ def insert_user(username, password):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (username, password))
+        #Hora española en el momento del registro
+        timestamp = datetime.now()
+        timestamp_sp = timestamp + timedelta(hours = 1)
+
+        cur.execute(sentenciaSQL, (username, password, token, timestamp_sp))
         conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -153,7 +159,7 @@ def insert_user(username, password):
 
 
 
-        #post de registro de inicio de sesión
+        #post de registro de intento de inicio de sesión
         #
         #
         #
@@ -173,18 +179,13 @@ def insert_user(username, password):
         #
         
         
-        #post de incidentes
+        #post de incidentes ---------------- FUNCIONAL
 @app.post("/incidents")
 async def create_incident(incident: Incident):
-    print("Se ha recibido un nuevo incidente: " +incident.title)
+    print("Se ha recibido un nuevo incidente")
 
     # Insertar el incidente en la base de datos
-    insert_incident(incident.timestamp, incident.incidentpic, incident.severity)
-
-    return {"mensaje": "Incidente registrado exitosamente"}
-
-def insert_incident(title, description, severity):
-    sentenciaSQL = "INSERT INTO INCIDENTS (TIMESTAMPINCIDENTS, INCIDENTPIC, SEVERITY) VALUES (%s, %s, %s)"
+    sentenciaSQL = """INSERT INTO "INCIDENTS" ("TIMESTAMPINCIDENTS", "INCIDENTPIC", "SEVERITY") VALUES (%s, %s, %s)"""
     conn = None
 
     try:
@@ -192,8 +193,15 @@ def insert_incident(title, description, severity):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (title, description, severity))
+        #Hora española en el momento del incidente
+        #Está en formato AA/MM/DD HH:MM:SS cambiar a --> DD/MM/AA
+        timestamp = datetime.now()
+        timestamp_sp = timestamp + timedelta(hours = 1)
+
+        cur.execute(sentenciaSQL, (timestamp_sp, incident.incidentpic, incident.severity))
         conn.commit()
+
+        return {"mensaje": "Incidente registrado exitosamente"}
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -205,18 +213,22 @@ def insert_incident(title, description, severity):
 
 
 
-    #   check usuario-contraseña
+    #   check usuario-contraseña ------------     +- FUNCIONAL
+    
+
+    #   En la consulta hay que introducir el token o dará error
+
 @app.post("/login")
 async def checkPassword(userCredentials : UserCredentials):
     print("Se ha recibido el intento de inicio de sesión por parte del usuario "+userCredentials.username)
-    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND PASSWORDUSER = %s"""
+    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND "PASSWORDUSER" = %s AND "TOKENUSER" = %s"""
     conn = None
     try:
         params=config()
         conn =psycopg2.connect(**params)
         cur=conn.cursor()
 
-        cur.execute(sentenciaSQL,(userCredentials.username,userCredentials.password))
+        cur.execute(sentenciaSQL,(userCredentials.username,userCredentials.password, userCredentials.token))
         user= cur.fetchone()
         cur.close()
 
@@ -233,9 +245,29 @@ async def checkPassword(userCredentials : UserCredentials):
 
 
     #   publicación horarios vigilancia
+
+    #   En postman sólo se completa la consulta cuando meto todos los datos del usuario al mismo tiempo
+    #   que los horarios de inicio y fin.
+
+    #   Funciona algo del tipo:
+    #   CONSULTA POSTMAN:
+    #   {
+    #   "userCredentials": {
+    #       "username": "9960cb0c-8600-477c-a7c3-12f494968cf0", <-- uuid que se genera, no se conoce de ante mano
+    #       "password": "alcoba",
+    #       "token" : "askbd9v349f"
+    #   },
+    #   "schedule": {
+    #       "scheduleStart": "2023-11-30",
+    #       "scheduleEnd": "2023-12-2"
+    #   }
+    #   }
+
+    #   Tampoco comprueba que el usuario esté registrado, simplemente crea el horario con los datos correctos
+    
 @app.post("/{user}/schedule")
-async def checkPassword(schedule : Schedule):
-    print("Se ha recibido una publicación de horario por parte de: "+ user)
+async def create_schedule(userCredentials : UserCredentials, schedule : Schedule):
+    print("Se ha recibido una publicación de horario por parte de: "+ userCredentials.username)
     sentenciaSQL="""INSERT INTO "WATCHSCHEDULE" ("SCHEDULESTART", "SCHEDULEEND", "SCHEDULEUSER") VALUES (%s, %s, %s)"""
     conn = None
     try:
@@ -243,7 +275,8 @@ async def checkPassword(schedule : Schedule):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (schedule.scheduleStart, schedule.scheduleEnd, user))
+        #En username pide el uuid para funcionar, habría que añadir y generar en la estructura del user
+        cur.execute(sentenciaSQL, (schedule.scheduleStart, schedule.scheduleEnd, userCredentials.username))
         conn.commit() 
 
         cur.close()
@@ -266,9 +299,9 @@ async def checkPassword(schedule : Schedule):
 
     #   Consulta del horario del usuario
 @app.get("/{user}/timetables")
-async def checkData():
+async def check_schedule():
     print("Se han solicitado los horarios del usuario")
-    sentenciaSQL="""SELECT * FROM WATCHSCHEDULE WHERE SCHEDULEUSER = %s"""
+    sentenciaSQL="""SELECT * FROM "WATCHSCHEDULE" WHERE "SCHEDULEUSER" = %s"""
     conn = None
     try:
         params=config()
@@ -295,9 +328,9 @@ async def checkData():
     
     #   get de incidentes //////////////////////////////////////////// NO ENTIENDO BIEN QUÉ HAY QUE HACER AQUÍ
 @app.get("/incidents")
-async def checkData():
+async def check_incidents():
     print("Se han solicitado los incidentes del sistema correspondientes al usuario")
-    sentenciaSQL="""SELECT * FROM INCIDENTS """ #Se ven los incidentes del usuario seleccionado
+    sentenciaSQL="""SELECT * FROM "INCIDENTS" """ #Se ven los incidentes del usuario seleccionado
     conn = None
     try:
         params=config()
@@ -331,11 +364,11 @@ async def checkData():
 
     #   Edición de los horarios de vigilancia
 @app.put("/{user}/schedule")
-async def checkPassword(schedule : Schedule):
+async def edit_schedule(schedule : Schedule):
     print("Se ha recibido una edición de horario por parte de: "+ user)
-    sentenciaSQL="""UPDATE WATCHSCHEDULE WHERE SCHEDULEUSER= %s
-                        SET SCHEDULESTART = %s,
-                        SET SCHEDULEEND = %s"""
+    sentenciaSQL="""UPDATE "WATCHSCHEDULE" WHERE "SCHEDULEUSER" = %s
+                        SET "SCHEDULESTART" = %s,
+                        SET "SCHEDULEEND" = %s"""
     conn = None
     try:
         params = config()
@@ -370,9 +403,9 @@ async def checkPassword(schedule : Schedule):
 
     #   Eliminar un horario ¿del usuario que ha realizado la acción?
 @app.delete("/{user}/schedule")
-async def checkPassword(schedule : int):
+async def delete_schedule(schedule : int):
     print("Se ha recibido una eliminación de horario por parte de: "+ user)
-    sentenciaSQL="""DELETE FROM WATCHSCHEDULE WHERE IDSCHEDULE= %s"""
+    sentenciaSQL="""DELETE FROM "WATCHSCHEDULE" WHERE "IDSCHEDULE"= %s"""
     conn = None
     try:
         params = config()

@@ -1,10 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 import psycopg2
 from config import config
 from pydantic import BaseModel
 from colorama import Style, Fore, Back, init
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+import socket
 
 app=FastAPI()
 
@@ -38,10 +43,10 @@ class UserCredentials(BaseModel):
 class Schedule(BaseModel):
     scheduleStart: str
     scheduleEnd: str
+    scheduleUser : str
 
 class Incident(BaseModel):
-    #timestamp: str
-    incidentpic: str
+    incidentPic: str
     severity: int
 
 
@@ -96,6 +101,9 @@ def connect():
 #
 
     #   Registro de usuario ----------------- FUNCIONAL
+    #   ***********
+    #   ***********¿El token de cada usuario cómo se genera, aquí? 
+    #   ***********
 @app.post("/signin") 
 async def registerUser(userCredentials: UserCredentials):
     print("Se ha recibido la solicitud de registro del usuario " + userCredentials.username)
@@ -159,27 +167,88 @@ def insert_user(username, password, token):
 
 
 
-        #post de registro de intento de inicio de sesión
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
+    #   check usuario-contraseña ------------ FUNCIONAL
+    #   En la consulta hay que introducir el token o dará error
+    #   Obviamente debería servir únicamente con usuario y contraseña pero xd
+@app.post("/login")
+async def checkPassword(userCredentials : UserCredentials):
+    print("Se ha recibido el intento de inicio de sesión por parte del usuario "+userCredentials.username)
+    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND "PASSWORDUSER" = %s AND "TOKENUSER" = %s"""
+    conn = None
+    try:
+        params=config()
+        conn =psycopg2.connect(**params)
+        cur=conn.cursor()
+
+        cur.execute(sentenciaSQL,(userCredentials.username,userCredentials.password, userCredentials.token))
+        user= cur.fetchone()
+        cur.close()
+
+        #if user:
+            #Devuelve true si credenciales válidas para registrar el inicio de sesión
+        return user is not None #{"mensaje":"Credenciales válidas"}
+        #else:
+        #    return HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+    except (Exception, psycopg2.DatabaseError)  as error:
+        print(error)
+        return False #Credenciales inválidas
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+
+    #   Middleware para obtener la dirección IP del cliente
+# Middleware para obtener la dirección IP del cliente
+@app.middleware("http")
+async def add_client_ip(request: Request, call_next):
+    client_host = request.client.host
+    request.state.client_ip = client_host
+    
+    response = await call_next(request)
+    
+    return response
+
+
+    #   Endpoint para registrar intentos de inicio de sesión
+@app.post("/loginAttempts")
+async def regist_login(userCredentials: UserCredentials, request: Request):
+
+    # Obtenemos la dirección IP del cliente desde el middleware
+    client_ip = request.state.client_ip
+
+    print("El usuario " + userCredentials.username + " ha intentado iniciar sesión desde la IP " + client_ip)
+
+    sentenciaSQL = """INSERT INTO "LOGINATTEMPT" ("NAMELOGIN", "PASSWORDLOGIN", "TIMESTAMPLOGIN", "IP") VALUES (%s, %s, %s, %s)"""
+    conn = None
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        # Hora española en el momento del intento de inicio de sesión
+        timestamp = datetime.now()
+        timestamp_sp = timestamp + timedelta(hours=1)
+
+        cur.execute(sentenciaSQL, (userCredentials.username, userCredentials.password, timestamp_sp, client_ip))
+        conn.commit()
+
+        return {"mensaje": "Intento de inicio de sesión registrado"}
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        raise HTTPException(status_code=500, detail="Error en la base de datos al registrar el incidente")
+
+    finally:
+        if conn is not None:
+            conn.close()
+
         
         
-        #post de incidentes ---------------- FUNCIONAL
+        #   post de incidentes ---------------- FUNCIONAL
 @app.post("/incidents")
 async def create_incident(incident: Incident):
     print("Se ha recibido un nuevo incidente")
@@ -198,7 +267,7 @@ async def create_incident(incident: Incident):
         timestamp = datetime.now()
         timestamp_sp = timestamp + timedelta(hours = 1)
 
-        cur.execute(sentenciaSQL, (timestamp_sp, incident.incidentpic, incident.severity))
+        cur.execute(sentenciaSQL, (timestamp_sp, incident.incidentPic, incident.severity))
         conn.commit()
 
         return {"mensaje": "Incidente registrado exitosamente"}
@@ -213,35 +282,7 @@ async def create_incident(incident: Incident):
 
 
 
-    #   check usuario-contraseña ------------     +- FUNCIONAL
-    
 
-    #   En la consulta hay que introducir el token o dará error
-
-@app.post("/login")
-async def checkPassword(userCredentials : UserCredentials):
-    print("Se ha recibido el intento de inicio de sesión por parte del usuario "+userCredentials.username)
-    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND "PASSWORDUSER" = %s AND "TOKENUSER" = %s"""
-    conn = None
-    try:
-        params=config()
-        conn =psycopg2.connect(**params)
-        cur=conn.cursor()
-
-        cur.execute(sentenciaSQL,(userCredentials.username,userCredentials.password, userCredentials.token))
-        user= cur.fetchone()
-        cur.close()
-
-        if user:
-            return {"mensaje":"Credenciales válidas"}
-        else:
-            return HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-    except (Exception, psycopg2.DatabaseError)  as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
 
 
     #   publicación horarios vigilancia
@@ -324,12 +365,11 @@ async def check_schedule():
             conn.close()
 
 
-    #TO-DO
     
-    #   get de incidentes //////////////////////////////////////////// NO ENTIENDO BIEN QUÉ HAY QUE HACER AQUÍ
+    #   get de incidentes --------   FUNCIONAL
 @app.get("/incidents")
 async def check_incidents():
-    print("Se han solicitado los incidentes del sistema correspondientes al usuario")
+    print("Se han solicitado los incidentes registrados por el sistema")
     sentenciaSQL="""SELECT * FROM "INCIDENTS" """ #Se ven los incidentes del usuario seleccionado
     conn = None
     try:
@@ -338,16 +378,19 @@ async def check_incidents():
         cur=conn.cursor()
 
         cur.execute(sentenciaSQL)
-        user= cur.fetchone()
+        incidents = cur.fetchall()  # Obtener todos los resultados
         cur.close()
 
-        if user:
-            return {"mensaje":"Credenciales válidas"}
+        if incidents:
+            # Devolver los incidentes en el formato deseado, por ejemplo, como una lista de diccionarios
+            return {"incidentes": [{"id": incident[0], "fecha y hora": incident[1], "imagen": incident[2], "severidad": incident[3]} for incident in incidents]}
         else:
-            return HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-    except (Exception, psycopg2.DatabaseError)  as error:
+            return {"mensaje": "No hay incidentes"}
+
+    except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
     finally:
         if conn is not None:
             conn.close()

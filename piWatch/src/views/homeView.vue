@@ -1,7 +1,7 @@
 <template>
-  <HelloWorld />
+  <Calendar />
 </template>
 
 <script setup>
-  import HelloWorld from '@/components/HelloWorld.vue'
+  import Calendar from '@/components/CalendarComponent.vue'
 </script>

@@ -330,7 +330,7 @@ async def check_schedule(user: str):
         cur.close()
 
         if sched:
-            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[3]} for sch in sched]}
+            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[4]} for sch in sched]}
         else:
             return HTTPException(status_code=401, detail="El usuario solicitado no existe")
         
@@ -378,7 +378,35 @@ async def check_incidents():
 
 
     # GET -- Devuelve el token del user cuyo horario está activo
+@app.get("/{user}/userToken/{iduser}")
+async def check_token(user: str, iduser: str):
+    print("Se ha solicitado el token del usuario " + user)
 
+    sentenciaSQL="""SELECT "TOKENUSER" FROM "USER" WHERE "IDUSER" = %s"""
+    conn = None
+
+    try:
+        params=config()
+        conn =psycopg2.connect(**params)
+        cur=conn.cursor()
+
+        cur.execute(sentenciaSQL, (iduser, ))
+        token = cur.fetchone()  # Obtener todos los resultados
+        cur.close()
+
+        if token:
+            # Devolver los incidentes en el formato deseado, por ejemplo, como una lista de diccionarios
+            return token
+        else:
+            return {"mensaje": "No hay incidentes"}
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 #========================#

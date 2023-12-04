@@ -28,10 +28,14 @@ app.add_middleware(
 
 
 #   Base models para los bodies
-class UserCredentials(BaseModel):
+class UserCredentialsSignin(BaseModel):
     username: str
     password: str
     token: str
+
+class UserCredentialsLogin(BaseModel):
+    username: str
+    password: str
 
 class Schedule(BaseModel):
     scheduleStart: str
@@ -92,17 +96,17 @@ def connect():
 
 #   Registro de usuario ----------------- FUNCIONAL
 @app.post("/signin") 
-async def registerUser(userCredentials: UserCredentials):
-    print("Se ha recibido la solicitud de registro del usuario " + userCredentials.username)
+async def registerUser(userCredentialsSignin: UserCredentialsSignin):
+    print("Se ha recibido la solicitud de registro del usuario " + userCredentialsSignin.username)
     
     # Verificar si el usuario ya existe
-    existing_user = check_user_exists(userCredentials.username)
+    existing_user = check_user_exists(userCredentialsSignin.username)
     
     if existing_user:
         raise HTTPException(status_code=400, detail="El usuario ya existe. Elija otro nombre de usuario.")
     
     # Insertar el nuevo usuario en la base de datos
-    insert_user(userCredentials.username, userCredentials.password, userCredentials.token)
+    insert_user(userCredentialsSignin.username, userCredentialsSignin.password, userCredentialsSignin.token)
     
     return {"mensaje": "Usuario registrado exitosamente"}
 
@@ -156,10 +160,10 @@ def insert_user(username, password, token):
 
 #   check usuario-contraseña ------------ FUNCIONAL
 @app.post("/login")
-async def checkPassword(userCredentials: UserCredentials):
-    print("Se ha recibido el intento de inicio de sesión por parte del usuario " + userCredentials.username)
+async def checkPassword(userCredentialsLogin: UserCredentialsLogin):
+    print("Se ha recibido el intento de inicio de sesión por parte del usuario " + userCredentialsLogin.username)
 
-    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND "PASSWORDUSER" = %s AND "TOKENUSER" = %s"""
+    sentenciaSQL="""SELECT * FROM "USER" WHERE "NAMEUSER" = %s AND "PASSWORDUSER" = %s"""
     conn = None
 
     try:
@@ -167,7 +171,7 @@ async def checkPassword(userCredentials: UserCredentials):
         conn =psycopg2.connect(**params)
         cur=conn.cursor()
 
-        cur.execute(sentenciaSQL, (userCredentials.username, userCredentials.password, userCredentials.token))
+        cur.execute(sentenciaSQL, (userCredentialsLogin.username, userCredentialsLogin.password))
         user= cur.fetchall()
         conn.commit()
 
@@ -197,11 +201,11 @@ async def add_client_ip(request: Request, call_next):
 
 #   Registro de intento de inicio de sesión ------------ FUNCIONAL
 @app.post("/loginAttempts")
-async def regist_login(userCredentials: UserCredentials, request: Request):
+async def regist_login(userCredentialsLogin: UserCredentialsLogin, request: Request):
     # Obtenemos la dirección IP del cliente desde el middleware
     client_ip = request.state.client_ip
 
-    print("El usuario " + userCredentials.username + " ha intentado iniciar sesión desde la IP " + client_ip)
+    print("El usuario " + userCredentialsLogin.username + " ha intentado iniciar sesión desde la IP " + client_ip)
 
     sentenciaSQL = """INSERT INTO "LOGINATTEMPT" ("NAMELOGIN", "PASSWORDLOGIN", "TIMESTAMPLOGIN", "IP") VALUES (%s, %s, %s, %s)"""
     conn = None
@@ -215,7 +219,7 @@ async def regist_login(userCredentials: UserCredentials, request: Request):
         timestamp = datetime.now()
         timestamp_sp = timestamp + timedelta(hours=1)
 
-        cur.execute(sentenciaSQL, (userCredentials.username, userCredentials.password, timestamp_sp, client_ip))
+        cur.execute(sentenciaSQL, (userCredentialsLogin.username, userCredentialsLogin.password, timestamp_sp, client_ip))
         conn.commit()
 
         return {"mensaje": "Intento de inicio de sesión registrado"}
@@ -319,7 +323,7 @@ async def check_schedule(user: str):
         if sched:
             return [{"id": sch[0], "scheduleStart": sch[1], "scheduleEnd": sch[2]} for sch in sched]
         else:
-            return HTTPException(status_code=401, detail="Credenciales inválidas")
+            return HTTPException(status_code=401, detail="El usuario solicitado no existe")
         
     except (Exception, psycopg2.DatabaseError)  as error:
         print(error)
@@ -373,6 +377,8 @@ async def check_incidents():
 #
 
 #   Edición de los horarios de vigilancia ---------- FUNCIONAL
+
+# *********************** OPCIONAL. Función fetchea con el id del horario no con el usuario para mayot eficacia
 @app.put("/{user}/schedule")
 async def edit_schedule(user: str, schedule: Schedule):
     print("Se ha recibido una edición de horario por parte de: " + user)

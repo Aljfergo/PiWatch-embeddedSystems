@@ -1,19 +1,25 @@
 <template>
     <v-container>
+      
       <v-row>
-        <!-- Botón para crear nuevo horario -->
+        <v-container style="background-color:#c58fb4; border-radius: 10px; width: 50%; padding: 3%; margin-top: 2%;">  
+          <schedule-container :schedules="schedules" />
+        </v-container>
+      </v-row>
+      
+      <v-row>
+
         <v-col>
           <v-btn @click="mostrarDialogo">Crear Nuevo Horario</v-btn>
         </v-col>
       </v-row>
-  
-      <!-- Diálogo para seleccionar fecha y hora -->
+
       <v-dialog v-model="dialogoVisible" max-width="80%" class="d-flex" style="display: flex; flex-direction: row;">
         <v-card>
           <v-card-title>Seleccionar Rango de Fechas y Horas</v-card-title>
   
           <v-card-text>
-            <!-- Sección para la fecha y hora inicial -->
+
             <v-row>
             <v-col>
               <v-row>
@@ -68,46 +74,78 @@
   </template>
   
   <script>
+import ScheduleContainer from './scheduleContainer.vue';
+
   export default {
     data() {
-      return {
-        dialogoVisible: false,
-        fechaInicial: null,
-        horaInicial: null,
-        minutosIniciales: null,
-        fechaFinal: null,
-        horaFinal: null,
-        minutosFinales: null,
-        horasValidas: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')),
-        minutosValidos: Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
-      };
+        return {
+            schedules: [],
+            dialogoVisible: false,
+            fechaInicial: null,
+            horaInicial: null,
+            minutosIniciales: null,
+            fechaFinal: null,
+            horaFinal: null,
+            minutosFinales: null,
+            horasValidas: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')),
+            minutosValidos: Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
+        };
+    },
+    mounted() {
+      const user = this.$route.params.user;
+      this.fecth(user);
     },
     computed: {
-      fechaMinima() {
-        const fechaActual = new Date();
-        return fechaActual.toISOString().split('T')[0];
-      },
+        fechaMinima() {
+            const fechaActual = new Date();
+            return fechaActual.toISOString().split('T')[0];
+        },
     },
     methods: {
-      mostrarDialogo() {
-        this.dialogoVisible = true;
-      },
-      cerrarDialogo() {
-        this.dialogoVisible = false;
-        this.fechaInicial = null;
-        this.horaInicial = null;
-        this.minutosIniciales = null;
-        this.fechaFinal = null;
-        this.horaFinal = null;
-        this.minutosFinales = null;
-      },
-      guardarHorario() {
-        
-        console.log("Fecha y hora inicial:", this.fechaInicial, this.horaInicial, this.minutosIniciales);
-        console.log("Fecha y hora final:", this.fechaFinal, this.horaFinal, this.minutosFinales);
-        this.cerrarDialogo();
-      },
+        mostrarDialogo() {
+            this.dialogoVisible = true;
+        },
+        cerrarDialogo() {
+            this.dialogoVisible = false;
+            this.fechaInicial = null;
+            this.horaInicial = null;
+            this.minutosIniciales = null;
+            this.fechaFinal = null;
+            this.horaFinal = null;
+            this.minutosFinales = null;
+        },
+        guardarHorario() {
+
+            if (!this.fechaInicial || !this.horaInicial || !this.minutosIniciales || !this.fechaFinal || !this.horaFinal || !this.minutosFinales) {
+                console.error('Por favor, complete todas las selecciones antes de guardar.');
+                return;
+            }
+            const scheduleStart = `${this.fechaInicial}T${this.horaInicial}:${this.minutosIniciales}Z`;
+            const scheduleEnd = `${this.fechaFinal}T${this.horaFinal}:${this.minutosFinales}Z`;
+
+            axios.post(`/user/schedule`, {
+                scheduleStart,
+                scheduleEnd,
+            })
+                .then(response => {
+                console.log('Horario guardado exitosamente:', response.data);
+                this.cerrarDialogo();
+            })
+                .catch(error => {
+                console.error('Error al guardar el horario:', error);
+            });
+        },
+        async fetchCards(user) {
+            try {
+                const response = await this.$axios.get('http://localhost:8000/${user}/schedule');
+                this.shares = response.data;
+            }
+            catch (error) {
+                console.error('Error al obtener los horarios', error);
+            }
+        },
     },
-  };
+    components: { ScheduleContainer }
+};
   </script>
   

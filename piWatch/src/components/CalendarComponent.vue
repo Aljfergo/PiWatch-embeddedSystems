@@ -17,19 +17,15 @@
       <v-dialog v-model="dialogoVisible" max-width="80%" class="d-flex" style="display: flex; flex-direction: row;">
         <v-card>
           <v-card-title>Seleccionar Rango de Fechas y Horas</v-card-title>
-  
           <v-card-text>
-
             <v-row>
             <v-col>
               <v-row>
-                <v-date-picker v-model="fechaInicial" :min="fechaMinima" title="Inicio de vigilancia"></v-date-picker>
+                <v-date-picker v-model="fechaInicial" @change="reformatearFechaInicial" :min="fechaMinima" title="Inicio de vigilancia"></v-date-picker>
               </v-row>
-
               <v-row style="width: 80%">
                 <v-select v-model="horaInicial" :items="horasValidas" :disabled="!fechaInicial" label="Hora"></v-select>
-                <div>:</div>
-              
+                  <div>:</div>
                 <v-select
                   v-model="minutosIniciales"
                   :items="minutosValidos"
@@ -40,12 +36,12 @@
             </v-col>
   
    
-            <v-divider vertical="true"></v-divider>
+            <v-divider vertical=true></v-divider>
   
    
             <v-col>
               <v-row>
-                <v-date-picker v-model="fechaFinal" :min="fechaInicial" title="Final de vigilancia" :disabled="!fechaInicial"></v-date-picker>
+                <v-date-picker v-model="fechaFinal" :min="fechaInicial" @change="reformatearFechaFinal" title="Final de vigilancia" :disabled="!fechaInicial"></v-date-picker>
               </v-row>
 
               <v-row style="width:80%;">
@@ -65,7 +61,7 @@
           </v-card-text>
   
           <v-card-actions>
-            <v-btn @click="guardarHorario">Guardar</v-btn>
+            <v-btn @click="guardarHorario(user)">Guardar</v-btn>
             <v-btn @click="cerrarDialogo">Cancelar</v-btn>
           </v-card-actions>
         </v-card>
@@ -75,7 +71,8 @@
   
   <script>
 import ScheduleContainer from './scheduleContainer.vue';
-
+import axios from 'axios';
+import { format } from 'date-fns';
   export default {
     data() {
         return {
@@ -88,12 +85,16 @@ import ScheduleContainer from './scheduleContainer.vue';
             horaFinal: null,
             minutosFinales: null,
             horasValidas: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')),
-            minutosValidos: Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
+            minutosValidos: Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')),
+            user: this.$route.params.user,
+            fechaFinalFormateada: '',
+            fechaInicialFormateada: '',
         };
     },
     mounted() {
       const user = this.$route.params.user;
-      this.fecth(user);
+      this.fetchCards(user);
+      
     },
     computed: {
         fechaMinima() {
@@ -114,16 +115,18 @@ import ScheduleContainer from './scheduleContainer.vue';
             this.horaFinal = null;
             this.minutosFinales = null;
         },
-        guardarHorario() {
+        guardarHorario(user) {
 
             if (!this.fechaInicial || !this.horaInicial || !this.minutosIniciales || !this.fechaFinal || !this.horaFinal || !this.minutosFinales) {
                 console.error('Por favor, complete todas las selecciones antes de guardar.');
                 return;
             }
-            const scheduleStart = `${this.fechaInicial}T${this.horaInicial}:${this.minutosIniciales}Z`;
-            const scheduleEnd = `${this.fechaFinal}T${this.horaFinal}:${this.minutosFinales}Z`;
+            this.reformatearFechaFinal();
+            this.reformatearFechaInicial();
+            const scheduleStart = `${this.fechaInicialFormateada} ${this.horaInicial}:${this.minutosIniciales}`;
+            const scheduleEnd = `${this.fechaFinalFormateada} ${this.horaFinal}:${this.minutosFinales}`;
 
-            axios.post(`/user/schedule`, {
+            axios.post(`http://localhost:8000/${user}/schedule`, {
                 scheduleStart,
                 scheduleEnd,
             })
@@ -137,13 +140,33 @@ import ScheduleContainer from './scheduleContainer.vue';
         },
         async fetchCards(user) {
             try {
-                const response = await this.$axios.get('http://localhost:8000/${user}/schedule');
-                this.shares = response.data;
+                const response = await axios.get(`http://localhost:8000/${user}/schedule`);
+                this.schedules = response.data;
+                console.log(this.schedules)
             }
             catch (error) {
                 console.error('Error al obtener los horarios', error);
             }
         },
+        formatDate (date) {
+          if (!date) return null
+          const [year, month, day] = date.split('-')
+          return `${day}-${month}-${year}`
+        },
+
+        reformatearFechaInicial() {
+          console.log("llega");
+          if (this.fechaInicial) {
+            this.fechaInicialFormateada = format(this.fechaInicial, 'yyyy-MM-dd');
+          }
+        },
+
+        reformatearFechaFinal() {
+          console.log("llega");
+          if (this.fechaFinal) {
+            this.fechaFinalFormateada = format(this.fechaFinal, 'yyyy-MM-dd');
+          }
+        }
     },
     components: { ScheduleContainer }
 };

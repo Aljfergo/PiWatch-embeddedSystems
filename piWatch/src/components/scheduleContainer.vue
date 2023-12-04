@@ -2,12 +2,12 @@
     <v-sheet class="card-container-sheet">
      <v-container fluid>
        <v-row>
-         <v-col v-for="(schedule, index) in shares" :key="index" cols="12" md="4">
+         <v-row v-for="(schedule, index) in schedules" :key="index" cols="12" md="4">
            <v-card>
              <v-card-title>{{ schedule.scheduleEnd }}</v-card-title>
              <v-card-title>{{ schedule.scheduleStart }}</v-card-title>
            </v-card>
-         </v-col>
+         </v-row>
        </v-row>
      </v-container>
     </v-sheet>
@@ -16,7 +16,7 @@
    <script>
    export default {
      props: {
-       schedule: {
+       schedules: {
          type: Array,
          required: true,
        },

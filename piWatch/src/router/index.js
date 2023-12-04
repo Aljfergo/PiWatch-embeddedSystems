@@ -6,7 +6,7 @@ import main from '@/views/mainView';
 
 const routes = [
   {
-    path: '/',
+    path: '/schedules/:user',
     component: home
   },
 

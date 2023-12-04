@@ -317,7 +317,7 @@ async def check_schedule(user: str):
         cur.close()
 
         if sched:
-            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2]} for sch in sched]}
+            return [{"id": sch[0], "scheduleStart": sch[1], "scheduleEnd": sch[2]} for sch in sched]
         else:
             return HTTPException(status_code=401, detail="Credenciales inválidas")
         

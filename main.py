@@ -193,13 +193,22 @@ async def checkPassword(userCredentialsLogin: UserCredentialsLogin):
 @app.middleware("http")
 async def add_client_ip(request: Request, call_next):
     client_host = request.client.host
-    request.state.client_ip = client_host
+
+    # Intenta obtener la dirección IP real del cliente desde la cabecera X-Forwarded-For
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = client_host
+
+    request.state.client_ip = client_ip
     
     response = await call_next(request)
     
     return response
 
 #   Registro de intento de inicio de sesión ------------ FUNCIONAL
+#   *************** Mirar si se puede obtener la IP real, no la pública
 @app.post("/loginAttempts")
 async def regist_login(userCredentialsLogin: UserCredentialsLogin, request: Request):
     # Obtenemos la dirección IP del cliente desde el middleware
@@ -321,7 +330,7 @@ async def check_schedule(user: str):
         cur.close()
 
         if sched:
-            return [{"id": sch[0], "scheduleStart": sch[1], "scheduleEnd": sch[2]} for sch in sched]
+            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[4]} for sch in sched]}
         else:
             return HTTPException(status_code=401, detail="El usuario solicitado no existe")
         
@@ -368,6 +377,38 @@ async def check_incidents():
 
 
 
+    # GET -- Devuelve el token del user cuyo horario está activo
+@app.get("/{user}/userToken/{iduser}")
+async def check_token(user: str, iduser: str):
+    print("Se ha solicitado el token del usuario " + user)
+
+    sentenciaSQL="""SELECT "TOKENUSER" FROM "USER" WHERE "IDUSER" = %s"""
+    conn = None
+
+    try:
+        params=config()
+        conn =psycopg2.connect(**params)
+        cur=conn.cursor()
+
+        cur.execute(sentenciaSQL, (iduser, ))
+        token = cur.fetchone()  # Obtener todos los resultados
+        cur.close()
+
+        if token:
+            # Devolver los incidentes en el formato deseado, por ejemplo, como una lista de diccionarios
+            return token
+        else:
+            return {"mensaje": "No hay incidentes"}
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 #========================#
 #     Actualizaciones    #
 #========================#
@@ -377,8 +418,7 @@ async def check_incidents():
 #
 
 #   Edición de los horarios de vigilancia ---------- FUNCIONAL
-
-# *********************** OPCIONAL. Función fetchea con el id del horario no con el usuario para mayot eficacia
+# *********************** OPCIONAL. Función coincide con el id del horario no con el usuario para mayot eficacia
 @app.put("/{user}/schedule")
 async def edit_schedule(user: str, schedule: Schedule):
     print("Se ha recibido una edición de horario por parte de: " + user)
@@ -408,6 +448,43 @@ async def edit_schedule(user: str, schedule: Schedule):
         if conn is not None:
             conn.close()
 
+
+
+#   Edita el estado del horario -- ACTIVO / INACTIVO
+@app.put("/schedule/{schedule_id}")
+async def edit_schedule(schedule_id: str):
+    print("Se ha recibido una petición de cambio de estado para el horario: " + schedule_id)
+
+    sentenciaSQLActiva = """UPDATE "WATCHSCHEDULE"
+                        SET "ACTIVE" = TRUE
+                        WHERE "IDSCHEDULE" = %s""" #setea activo el horario del id
+
+    sentenciaSQLDesactiva = """UPDATE "WATCHSCHEDULE"
+                            SET "ACTIVE" = FALSE
+                            WHERE "ACTIVE" = TRUE"""
+
+    conn = None
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        cur.execute(sentenciaSQLDesactiva)
+        cur.execute(sentenciaSQLActiva, (schedule_id,))
+        conn.commit() 
+
+        cur.close()
+
+        return {"mensaje": "Horario activo"}
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        raise HTTPException(status_code=400, detail="Error al cambiar el estado de el/los horario/s")
+
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 #======================#
@@ -454,4 +531,3 @@ if __name__ == '__main__':
     print('\n\n\n\n')
     connect()
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    

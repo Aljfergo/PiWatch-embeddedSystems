@@ -6,6 +6,7 @@
            <v-card>
              <v-card-title>{{ schedule.scheduleEnd }}</v-card-title>
              <v-card-title>{{ schedule.scheduleStart }}</v-card-title>
+             <v-button>Activar horario</v-button>
            </v-card>
          </v-row>
        </v-row>

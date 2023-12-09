@@ -119,7 +119,7 @@
             <v-btn
               color="#4e112e"
               rounded="xl"
-              @click="login"
+              @click="register"
               :loading="loading"
               width="99%"
               style="font-weight: bold; font-size: xx-large; margin-left: 1%; height: 20%;"
@@ -268,7 +268,7 @@ export default{
                     this.loginSuccess = true;
                     this.loginError = null;
                     this.loading = false;
-                    this.$router.push('/schedules/username/');
+                    this.$router.push(`/schedules/${this.username}/`);
                 }
                 else {
                     this.loginSuccess = false;

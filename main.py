@@ -178,7 +178,7 @@ async def checkPassword(userCredentialsLogin: UserCredentialsLogin):
         if user:
             return {"mensaje": "Credenciales válidas"}
         else:
-            return HTTPException(status_code=401, detail="Credenciales inválidas")
+            return HTTPException(status=401, detail="Credenciales inválidas")
         
     except (Exception, psycopg2.DatabaseError)  as error:
         print(error)
@@ -213,7 +213,7 @@ async def add_client_ip(request: Request, call_next):
 async def regist_login(userCredentialsLogin: UserCredentialsLogin, request: Request):
     # Obtenemos la dirección IP del cliente desde el middleware
     client_ip = request.state.client_ip
-
+    
     print("El usuario " + userCredentialsLogin.username + " ha intentado iniciar sesión desde la IP " + client_ip)
 
     sentenciaSQL = """INSERT INTO "LOGINATTEMPT" ("NAMELOGIN", "PASSWORDLOGIN", "TIMESTAMPLOGIN", "IP") VALUES (%s, %s, %s, %s)"""

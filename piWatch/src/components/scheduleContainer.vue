@@ -4,10 +4,11 @@
       <v-row>
         <v-row v-for="(schedule, index) in schedules" :key="index" cols="12" md="4">
           <v-card>
-            <v-card-title>{{ schedule.id }}</v-card-title>
             <v-card-title>{{ schedule.scheduleEnd }}</v-card-title>
             <v-card-title>{{ schedule.scheduleStart }}</v-card-title>
-            <v-btn @click="enableSchedule(schedule.id)">Activar horario</v-btn>
+            <v-btn @click="enableSchedule(schedule.id)" :disabled="schedule.active">
+              {{ schedule.active ? 'Activado' : 'Activar horario' }}
+            </v-btn>
           </v-card>
         </v-row>
       </v-row>
@@ -41,6 +42,8 @@ export default {
         .catch(error => {
           console.error('Error al activar el horario:', error);
         });
+
+        location.reload();
     },
   },
 };

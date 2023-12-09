@@ -1,14 +1,14 @@
 import telepot
 from telepot.loop import MessageLoop
-import uuid
+from token import token
 
 
 TOKEN = '6785587695:AAH0tjLxIIlGxuaUaJIXewNlkQO2HI9MeT4'
 
 def handle_start(msg):
     chat_id = msg['chat']['id']
-    user_token = str(uuid.uuid4())
-    bot.sendMessage(chat_id, f'Tu token único es: {user_token}')
+    bot.sendMessage(chat_id, f'Bienvenido a PiWatch! Por favor, inserte el siguiente token en el registro para poder vincular sus cuentas.')
+    bot.sendMessage(chat_id, f'Tu token único es: {chat_id}')
 
 bot = telepot.Bot(TOKEN)
 MessageLoop(bot, {'chat': handle_start}).run_as_thread()

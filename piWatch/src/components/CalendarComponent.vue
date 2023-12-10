@@ -133,6 +133,7 @@ import { format } from 'date-fns';
                 .then(response => {
                 console.log('Horario guardado exitosamente:', response.data);
                 this.cerrarDialogo();
+                location.reload();
             })
                 .catch(error => {
                 console.error('Error al guardar el horario:', error);

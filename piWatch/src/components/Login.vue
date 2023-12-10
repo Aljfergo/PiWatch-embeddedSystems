@@ -231,10 +231,15 @@ export default{
     methods: {
         login() {
             this.loading = true;
-            axios.post('http://localhost:8000/loginAttempt', {triedUsername: this.username, triedPassword: this.password});
+            axios.post('http://localhost:8000/loginAttempts', {username: this.username, password: this.password});
+
+
+
             axios.post('http://localhost:8000/login', { username: this.username, password: this.password })
                 .then(response => {
-                if (response.status === 200) {
+                
+                  if (response.status === 200 && response.data && response.data.mensaje === 'Credenciales válidas') {
+                  console.log("Resulta que"+response.data);
                     this.loginSuccess = true;
                     this.loginError = null;
                     this.loading = false;
@@ -243,12 +248,18 @@ export default{
                 else {
                     this.loginSuccess = false;
                     this.loginError = 'Usuario o contraseña no coincidentes';
+                    this.loading=false;
                     alert(this.loginError);
                 }
-            })
-                .catch(error => {
-                this.loginSuccess = false;
-                this.loginError = 'Error en la solicitud';
+
+            }).catch(error => {
+                if (error.response) {
+                  console.error(error.response.data);
+                  this.loginError = error.response.data.detail || 'Error en la solicitud';
+                } else {
+                  console.error('Error en la solicitud', error.message);
+                  this.loginError = 'Error en la solicitud';
+                }
                 this.showError();
                 this.loading = false;
             });

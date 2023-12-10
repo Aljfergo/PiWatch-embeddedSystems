@@ -11,7 +11,8 @@ services:
     ports:
       - '5432:5432'
     volumes: 
-      - db:/var/lib/postgresql/data
+      - ./db/data:/var/lib/postgresql/data
+      - ./db/scripts:/docker-entrypoint-initdb.d
     networks:
       - app-network
   backend:
@@ -26,10 +27,6 @@ services:
       - "8000:8000" 
     volumes:
       - .:/app
-volumes:
-  db:
-    driver: local
-
 networks:
     app-network:
         driver: bridge

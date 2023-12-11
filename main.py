@@ -330,7 +330,8 @@ async def check_schedule(user: str):
         cur.close()
 
         if sched:
-            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[4]} for sch in sched]}
+            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[3]} for sch in sched]}
+
         else:
             return HTTPException(status_code=401, detail="El usuario solicitado no existe")
         
@@ -378,6 +379,7 @@ async def check_incidents():
 
 
     # GET -- Devuelve el token del user cuyo horario está activo
+
 @app.get("/{user}/userToken/{iduser}")
 async def check_token(user: str, iduser: str):
     print("Se ha solicitado el token del usuario " + user)
@@ -407,6 +409,7 @@ async def check_token(user: str, iduser: str):
     finally:
         if conn is not None:
             conn.close()
+
 
 
 #========================#

@@ -20,7 +20,7 @@ saved_model_path = './saved_model'
 model = tf.saved_model.load(saved_model_path)
 print("Modelo listo!!")
 
-imagen_path = './imagen2.jpg'
+imagen_path = 'test_dataset/deteccion.jpg'
 frame = cv2.imread(imagen_path)
 
 def preprocess_image(image):
@@ -50,11 +50,17 @@ for i in range(len(detections['detection_boxes'])):
         print(f"Clase: {CLASSES[class_id]}, Confianza: {confidence}")
 
             # Filtrar por clase 1
-        if (class_id == 1 or class_id==17 or class_id ==18) and confidence >0.60:
+        if class_id == 1 and confidence >0.60:
             label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
             cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 0, 255), 2)
             y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
             cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+        if (class_id==17 or class_id ==18) and confidence>0.60:
+            label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
+            cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
+            y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
+            cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 
 

@@ -21,7 +21,7 @@ import axios from 'axios';
     },
     mounted() {
       
-      this.fetchCards(user);
+      this.fetchCards();
       
     },
     methods: {
@@ -37,7 +37,7 @@ import axios from 'axios';
             }
         },
     },
-    components: { LoginAttemptContainer }
+    components: { IncidentContainer }
 };
   </script>
   

@@ -311,7 +311,7 @@ async def create_schedule(user: str, schedule: Schedule):
 #   ->  GETS
 #
 
-#   Consulta del horario del usuario ----------- FUNCIONAL
+#   Consulta del horario del usuario
 @app.get("/{user}/schedule")
 async def check_schedule(user: str):
     print("Se han solicitado los horarios del usuario " + user)
@@ -329,7 +329,7 @@ async def check_schedule(user: str):
         cur.close()
 
         if sched:
-            return {"horarios de " + user: [{"id": sch[0], "comienzo": sch[1], "finalización": sch[2], "estado": sch[3]} for sch in sched]}
+            return [{"id": sch[0], "scheduleStart": sch[1], "scheduleEnd": sch[2], "active": sch[4]} for sch in sched]
 
         else:
             return HTTPException(status_code=401, detail="El usuario solicitado no existe")
@@ -363,7 +363,7 @@ async def check_incidents():
 
         if incidents:
             # Devolver los incidentes en el formato deseado, por ejemplo, como una lista de diccionarios
-            return {"incidentes": [{"id": incident[0], "fecha y hora": incident[1], "imagen": incident[2], "severidad": incident[3]} for incident in incidents]}
+            return [{"id": incident[0], "timestamp": incident[1], "imagepic": incident[2], "severity": incident[3]} for incident in incidents]
         else:
             return {"mensaje": "No hay incidentes"}
 
@@ -418,6 +418,67 @@ async def check_token():
     finally:
         if conn is not None:
             conn.close()
+
+
+
+#	Devolver el horario activo en el instante de tiempo
+@app.get("/activeSchedule")
+async def check_activeSchedule():
+    print("Se ha solicitado el horario activo")
+    
+    sentenciaSQL="""SELECT * FROM "WATCHSCHEDULE" WHERE "ACTIVE" = TRUE"""
+    conn = None
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        cur.execute(sentenciaSQL)
+        sched = cur.fetchone()
+        cur.close()
+
+        if sched:
+            return {"scheduleStart": sched[1], "scheduleEnd": sched[2]}
+
+        else:
+            return HTTPException(status_code=401, detail="No hay ningún horario activo")
+        
+    except (Exception, psycopg2.DatabaseError)  as error:
+        print(error)
+        raise HTTPException(status_code=500, detail="Error en la base de datos al recuperar el horario")
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+
+#   GET loginAttempts de un usuario
+@app.get("/{user}/loginAttempts")
+async def check_login(user: str):
+    sentenciaSQL = """SELECT * FROM "LOGINATTEMPT" WHERE "NAMELOGIN"= %s"""
+    conn = None
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        cur.execute(sentenciaSQL, (user, ))
+        attempts = cur.fetchall()
+        conn.commit()
+
+        return attempts
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        raise HTTPException(status_code=500, detail="Error al recuperar los intentos de inicio de sesión del usuario")
+
+    finally:
+        if conn is not None:
+            conn.close()
+
 
 
 #========================#
@@ -507,11 +568,11 @@ async def edit_schedule(schedule_id: str):
 #
 
 #   Eliminar un horario 
-@app.delete("/{user}/schedule/{schedule_id}")
-async def delete_schedule(user: str, schedule_id: str):
-    print("Se ha recibido una eliminación de horario por parte de " + user)
+@app.delete("/schedule/{schedule_id}")
+async def delete_schedule(schedule_id: str):
+    print("Se ha recibido una petición de eliminación del horario " + schedule_id)
 
-    sentenciaSQL="""DELETE FROM "WATCHSCHEDULE" WHERE "IDSCHEDULE"= %s AND "SCHEDULEUSER" = %s"""
+    sentenciaSQL="""DELETE FROM "WATCHSCHEDULE" WHERE "IDSCHEDULE"= %s"""
     conn = None
 
     try:
@@ -519,7 +580,7 @@ async def delete_schedule(user: str, schedule_id: str):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (schedule_id, user))
+        cur.execute(sentenciaSQL, (schedule_id,))
         sched : cur.fetchone()
         conn.commit() 
 

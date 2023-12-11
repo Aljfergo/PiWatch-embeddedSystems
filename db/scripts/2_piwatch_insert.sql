@@ -1,19 +1,19 @@
-INSERT INTO "USER" ("NAMEUSER","TIMESTAMPUSER","PASSWORDUSER")
-VALUES ('User1','2023-01-01T01:00Z','1234'),
-       ('User2', '2023-02-02T02:00Z','5678'),
-       ('User3', '2023-03-03T03:00Z','8900');
+INSERT INTO "USER" ("NAMEUSER","TIMESTAMPUSER","PASSWORDUSER", "TOKENUSER")
+VALUES ('Alejandro','2023-01-01T01:00Z','1234', '1903844038'),
+       ('Diego', '2023-02-02T02:00Z','5678', '6070266532'),
+       ('Sergio', '2023-03-03T03:00Z','8900', '5918241959');
 
 INSERT INTO "LOGINATTEMPT" ( "NAMELOGIN", "PASSWORDLOGIN", "TIMESTAMPLOGGIN", "IP" )
-VALUES  ('lkrgo', '1234', '2023-10-30T11:49Z', '10.30.48.54')
-        ('flhyg', '5678', '2023-10-30T12:30Z', '10.30.48.54')
-        ('fhjf0', '8900', '2023-10-30T12:30Z', '10.30.48.54')
+VALUES  ('Alejandro', '4321', '2023-10-30T11:49Z', '10.30.48.54')
+        ('Sergio', '5678', '2023-10-30T12:30Z', '10.30.48.54')
+        ('Diego', '8900', '2023-10-30T12:30Z', '10.30.48.54')
 
 INSERT INTO "INCIDENTS" ( "TIMESTAMPINCIDENTS", "INCIDENTPIC", "SEVERITY")
-VALUES ('2023-10-30T11:49Z', '/camera/motion_video/incidente1.mp4',"2")
-       ('2023-10-30T12:49Z', '/camera/motion_video/incidente2.mp4',"1")
-       ('2023-10-30T13:49Z', '/camera/motion_video/incidente3.mp4',"2")
+VALUES ('2023-10-30T11:49Z', '/camera/motion_video/incidente1.mp4','2')
+       ('2023-10-30T12:49Z', '/camera/motion_video/incidente2.mp4','1')
+       ('2023-10-30T13:49Z', '/camera/motion_video/incidente3.mp4','2')
 
 INSERT INTO "WATCHSCHEDULE" ("SCHEDULESTART", "SCHEDULEEND",  "SCHEDULEUSER", "ACTIVE" )
-VALUES ('2023-10-30T13:49Z', '2023-10-30T13:50Z', 'User1', "FALSE")
-       ('2023-10-30T14:49Z', '2023-10-30T14:50Z', 'User2', "FALSE")
-       ('2023-10-30T15:49Z', '2023-10-30T15:50Z', 'User3', "TRUE")
+VALUES ('2023-10-30T13:49Z', '2023-10-30T13:50Z', 'Alejandro', 'FALSE')
+       ('2023-10-30T14:49Z', '2023-10-30T14:50Z', 'Diego', 'FALSE')
+       ('2023-10-30T15:49Z', '2023-10-30T15:50Z', 'Sergio', 'TRUE')

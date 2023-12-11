@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
 import tensorflow as tf
+from gpiozero import MotionSensor
+import time
+import telepot
+import requests
+import picamera
 
 CLASSES = [
     "nada","persona", "bicicleta", "coche", "motocicleta", "avión", "autobús", "tren", "camión", "barco", "semáforo",
@@ -20,8 +25,7 @@ saved_model_path = './saved_model'
 model = tf.saved_model.load(saved_model_path)
 print("Modelo listo!!")
 
-imagen_path = 'test_dataset/deteccion.jpg'
-frame = cv2.imread(imagen_path)
+
 
 def preprocess_image(image):
     image = cv2.resize(image, (300, 300))
@@ -30,46 +34,80 @@ def preprocess_image(image):
     image = np.expand_dims(image, axis=0)  
     return image
 
-input_image = preprocess_image(frame)
+def capture_photo(camera, filename='incident.jpg'):
+    camera.capture(filename)
 
-detections = model(input_image)
+def inActiveSchedule():
 
-for i in range(len(detections['detection_boxes'])):
-    
-    (h, w) = frame.shape[:2]
-    detection_boxes = detections['detection_boxes'].numpy()
-    num_detections = detection_boxes.shape[1]
-    detection_classes = detections['detection_classes'][0].numpy()
-    detection_scores = detections['detection_scores'][0].numpy()
+    url = "http://localhost:8000/activeSchedule"
+    response = requests.get(url)
 
-    for i in range(num_detections):
-        box = detection_boxes[0, i, :]
-        (startY, startX, endY, endX) = (box[0] * h, box[1] * w, box[2] * h, box[3] * w)
-        class_id = int(detection_classes[i])
-        confidence = detection_scores[i]
-        print(f"Clase: {CLASSES[class_id]}, Confianza: {confidence}")
+    if response.status_code == 200:
+        data = response.json()
+        schedule_start = data.get("scheduleStart")
+        schedule_end = data.get("scheduleEnd")
+        current_time = int(time.time())
 
-            # Filtrar por clase 1
-        if class_id == 1 and confidence >0.60:
-            label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
-            cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 0, 255), 2)
-            y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
-            cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        if schedule_start <= current_time <= schedule_end:
+            return True
+        else:
+            return False
+    else:
+        print(f"Error en la solicitud. Código de estado: {response.status_code}")
+        return False
 
-        if (class_id==17 or class_id ==18) and confidence>0.60:
-            label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
-            cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
-            y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
-            cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+with open('./token.txt', 'r') as file:
+    TOKEN = file.read().strip()
+motion_sensor = MotionSensor(4)
+bot = telepot.Bot(TOKEN)
 
 
+while True:
+    if inActiveSchedule():
+        if motion_sensor.motion_detected():
+            chat_id = requests.get("http://localhost:8000/activeScheduleUserToken")
+
+            with picamera.PiCamera() as camera:
+                capture_photo(camera)
+
+            #imagen_path = 'test_dataset/deteccion.jpg'
+            imagen_path = 'captured_photo.jpg'
+            frame = cv2.imread(imagen_path)
+            input_image = preprocess_image(frame)
 
 
+            detections = model(input_image)
+
+            for i in range(len(detections['detection_boxes'])):
+                
+                (h, w) = frame.shape[:2]
+                detection_boxes = detections['detection_boxes'].numpy()
+                num_detections = detection_boxes.shape[1]
+                detection_classes = detections['detection_classes'][0].numpy()
+                detection_scores = detections['detection_scores'][0].numpy()
+
+                for i in range(num_detections):
+                    box = detection_boxes[0, i, :]
+                    (startY, startX, endY, endX) = (box[0] * h, box[1] * w, box[2] * h, box[3] * w)
+                    class_id = int(detection_classes[i])
+                    confidence = detection_scores[i]
+                    print(f"Clase: {CLASSES[class_id]}, Confianza: {confidence}")
+
+                        # Filtrar por clase 1
+                    if class_id == 1 and confidence >0.60:
+                        label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
+                        cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 0, 255), 2)
+                        y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
+                        cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+                    if (class_id==17 or class_id ==18) and confidence>0.60:
+                        label = "{}: {:.2f}%".format(CLASSES[class_id], confidence * 100)
+                        cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
+                        y = int(startY) - 15 if int(startY) - 15 > 15 else int(startY) + 15
+                        cv2.putText(frame, label, (int(startX), y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 
-
-
-# Mostrar el resultado
-cv2.imshow("Resultado", frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+            # Mostrar el resultado
+            cv2.imshow("Resultado", frame)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()

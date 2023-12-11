@@ -380,27 +380,37 @@ async def check_incidents():
 
     # GET -- Devuelve el token del user cuyo horario está activo
 
-@app.get("/{user}/userToken/{iduser}")
-async def check_token(user: str, iduser: str):
-    print("Se ha solicitado el token del usuario " + user)
+@app.get("/activeScheduleUserToken")
+async def check_token():
+    sentenciaSQL_watchschedule = """SELECT "SCHEDULEUSER" FROM "WATCHSCHEDULE" WHERE "ACTIVE" = TRUE LIMIT 1"""
+    sentenciaSQL_user = """SELECT "TOKENUSER" FROM "USER" WHERE "NAMEUSER" = %s"""
 
-    sentenciaSQL="""SELECT "TOKENUSER" FROM "USER" WHERE "IDUSER" = %s"""
     conn = None
 
     try:
-        params=config()
-        conn =psycopg2.connect(**params)
-        cur=conn.cursor()
+        
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
 
-        cur.execute(sentenciaSQL, (iduser, ))
-        token = cur.fetchone()  # Obtener todos los resultados
+        
+        cur.execute(sentenciaSQL_watchschedule)
+        watchschedule_user = cur.fetchone()
+
+        if not watchschedule_user:
+            raise HTTPException(status_code=404, detail="No hay usuarios activos en WATCHSCHEDULE")
+
+        
+        username = watchschedule_user[0]
+        cur.execute(sentenciaSQL_user, (username,))
+        token = cur.fetchone()
+
         cur.close()
 
         if token:
-            # Devolver los incidentes en el formato deseado, por ejemplo, como una lista de diccionarios
-            return token
+            return token[0]
         else:
-            return {"mensaje": "No hay incidentes"}
+            raise HTTPException(status_code=404, detail=f"No se encontró el usuario {username} en la tabla USER")
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -409,7 +419,6 @@ async def check_token(user: str, iduser: str):
     finally:
         if conn is not None:
             conn.close()
-
 
 
 #========================#

@@ -69,10 +69,9 @@ def connect():
         print('\n')
         print(Fore.GREEN+"->Base de datos conectada correctamente\n\n")
 
-        with open("bdd/piwatch_structure.sql", "r") as script_file:
-            cur.execute(script_file.read())
-            
-            print("Tablas creadas con éxito")
+        #with open("bdd/piwatch_structure.sql", "r") as script_file:
+        #    cur.execute(script_file.read())
+        #    print("Tablas creadas con éxito")
         
         cur.close()
         conn.commit()

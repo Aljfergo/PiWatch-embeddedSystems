@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS "LOGINATTEMPT"
     "NAMELOGIN"                 VARCHAR(100) NOT NULL,
     "PASSWORDLOGIN"             VARCHAR(100) NOT NULL,
     "TIMESTAMPLOGIN"            TIMESTAMP    NOT NULL,
-    --"ESTADO"                    VARCHAR(100) NOT NULL,   
     "IP"                        VARCHAR(20)  NOT NULL,
     PRIMARY KEY ("IDLOGIN")
 );
@@ -31,9 +30,10 @@ CREATE TABLE IF NOT EXISTS "INCIDENTS"
 );
 
 CREATE TABLE IF NOT EXISTS "WATCHSCHEDULE" (
-  "IDSCHEDULE"                uuid DEFAULT uuid_generate_v4(),
-  "SCHEDULESTART"             TIMESTAMP NOT NULL,
-  "SCHEDULEEND"               TIMESTAMP NOT NULL,
-  "SCHEDULEUSER"              VARCHAR(100) NOT NULL,
-  PRIMARY KEY ("IDSCHEDULE")
+    "IDSCHEDULE"                uuid DEFAULT uuid_generate_v4(),
+    "SCHEDULESTART"             TIMESTAMP NOT NULL,
+    "SCHEDULEEND"               TIMESTAMP NOT NULL,
+    "SCHEDULEUSER"              VARCHAR(100) NOT NULL,
+    "ACTIVE"                    BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY ("IDSCHEDULE")
 );

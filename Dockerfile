@@ -11,3 +11,5 @@ EXPOSE 8000
 
 # Ejecuto
 CMD ["python", "main.py"]
+# CMD ["rosrun", "empotrados piwatch_listener.py"]
+# CMD ["rosrun", "empotrados piwatch_talker.py"]

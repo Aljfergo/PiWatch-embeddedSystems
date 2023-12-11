@@ -41,7 +41,6 @@ def capture_photo(camera, filename='incident.jpg'):
     camera.capture(filename)
 
 def inActiveSchedule():
-
     url = "http://localhost:8000/activeSchedule"
     response = requests.get(url)
 

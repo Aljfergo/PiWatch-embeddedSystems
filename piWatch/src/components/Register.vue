@@ -268,7 +268,7 @@ export default{
                     this.loginSuccess = true;
                     this.loginError = null;
                     this.loading = false;
-                    this.$router.push(`/schedules/${this.username}/`);
+                    this.$router.push(`/home/${this.username}`);
                 }
                 else {
                     this.loginSuccess = false;

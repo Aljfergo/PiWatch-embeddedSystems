@@ -243,7 +243,7 @@ export default{
                     this.loginSuccess = true;
                     this.loginError = null;
                     this.loading = false;
-                    this.$router.push('/main');
+                    this.$router.push(`/home/${this.username}`);
                 }
                 else {
                     this.loginSuccess = false;

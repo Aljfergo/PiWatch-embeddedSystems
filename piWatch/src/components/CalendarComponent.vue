@@ -1,18 +1,39 @@
 <template>
-    <v-container>
-      
-      <v-row>
-        <v-container style="background-color:#c58fb4; border-radius: 10px; width: 50%; padding: 3%; margin-top: 2%;">  
-          <schedule-container :schedules="schedules" />
-        </v-container>
-      </v-row>
-      
-      <v-row>
+    <div class="fade-background">
+      <div class="fixed-button">
+        <router-link :to="`/home/${user}`">
+          <v-btn>Atrás</v-btn>
+        </router-link>
+      </div>
+      <v-row style="align-self: center; text-align: center">
+        <v-card style="margin-bottom:-20px; margin-left: 260px; margin-top: 30px; padding: 40px; width:1200px; background-color:#4b1139; color: whitesmoke;">
+          <h1>
+            <v-icon
+              icon="mdi-clock"
 
-        <v-col>
-          <v-btn @click="mostrarDialogo">Crear Nuevo Horario</v-btn>
-        </v-col>
+              color="white"
+              />
+            
+            Horarios 
+
+            <v-icon
+              icon="mdi-clock"
+
+              color="white"
+              />
+          </h1>
+        </v-card>
       </v-row>
+      <v-row>
+        <v-container style="background-color:#4f13365e;  border-radius: 10px; width: 1500px; padding: 3%; margin-top: 2%;">  
+          <schedule-container :schedules="schedules" />
+          <v-btn style="width: 1100px; font-size: xx-large;  margin-top:20px; border-radius: 8px; height: 150px; background-color: rgba(97, 37, 78, 0.562); color: whitesmoke;" @click="mostrarDialogo">+</v-btn>
+        </v-container>
+        
+          
+        
+      </v-row>
+      
 
       <v-dialog v-model="dialogoVisible" max-width="80%" class="d-flex" style="display: flex; flex-direction: row;">
         <v-card>
@@ -66,8 +87,22 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-    </v-container>
+    </div>
   </template>
+
+  <style scoped>
+  .fade-background{
+    background: linear-gradient(70deg, #f3f4ca, rgb(57, 2, 48));
+  }
+  .fixed-button {
+  position: fixed;
+  bottom: 20px; 
+  right: 20px; 
+  z-index: 1000; 
+}
+
+
+</style>
   
   <script>
 import ScheduleContainer from './scheduleContainer.vue';

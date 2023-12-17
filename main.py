@@ -316,7 +316,7 @@ async def create_schedule(user: str, schedule: Schedule):
 async def check_schedule(user: str):
     print("Se han solicitado los horarios del usuario " + user)
     
-    sentenciaSQL="""SELECT * FROM "WATCHSCHEDULE" WHERE "SCHEDULEUSER" = %s"""
+    sentenciaSQL="""SELECT * FROM "WATCHSCHEDULE" WHERE "SCHEDULEUSER" = %s ORDER BY "SCHEDULESTART" ASC"""
     conn = None
 
     try:
@@ -469,8 +469,8 @@ async def check_login(user: str):
         attempts = cur.fetchall()
         conn.commit()
 
-        return attempts
-
+        if attempts:
+            return [{"id": attempt[0], "password": attempt[2], "timestamp": attempt[3], "ip": attempt[4]} for attempt in attempts]
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
         raise HTTPException(status_code=500, detail="Error al recuperar los intentos de inicio de sesión del usuario")

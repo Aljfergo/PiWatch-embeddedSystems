@@ -14,12 +14,12 @@ const routes = [
   },
 
   {
-    path: '/login',
+    path: '/',
     component: login
   },
 
   {
-    path: '/main',
+    path: '/home/:user',
     component: main
   },
 
@@ -34,7 +34,7 @@ const routes = [
   },
 
   {
-    path: '/incident',
+    path: '/incidents/:user',
     component: incident
   },
 ]

@@ -7,7 +7,7 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/sabiab00/catkin_ws/devel:$CMAKE_PREFIX_PATH"
-export PWD='/home/sabiab00/catkin_ws/build'
-export ROSLISP_PACKAGE_DIRECTORIES='/home/sabiab00/catkin_ws/devel/share/common-lisp'
-export ROS_PACKAGE_PATH="/home/sabiab00/catkin_ws/src:$ROS_PACKAGE_PATH"
+export CMAKE_PREFIX_PATH="/home/diego/PiWatch-embeddedSystems/catkin_ws/devel:$CMAKE_PREFIX_PATH"
+export PWD='/home/diego/PiWatch-embeddedSystems/catkin_ws/build'
+export ROSLISP_PACKAGE_DIRECTORIES='/home/diego/PiWatch-embeddedSystems/catkin_ws/devel/share/common-lisp'
+export ROS_PACKAGE_PATH="/home/diego/PiWatch-embeddedSystems/catkin_ws/src:$ROS_PACKAGE_PATH"

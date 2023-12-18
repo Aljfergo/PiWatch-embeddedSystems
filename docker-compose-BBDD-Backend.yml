@@ -26,7 +26,19 @@ services:
     ports:
       - "8000:8000" 
     volumes:
-      - .:/app
+      - .:/app 
+  ros:
+    container_name: piwatch_ros
+    image: osrf/ros:noetic-desktop-full
+    restart: always
+    command: bash -c "source /opt/ros/noetic/setup.bash && roscore"
+    ports:
+      - "11311:11311"
+    networks:
+      - app-network
+    volumes:
+      - ./piWatch-ros:/piWatch-ros
+
 networks:
     app-network:
         driver: bridge

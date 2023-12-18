@@ -1,0 +1,19 @@
+FROM osrf/ros:noetic-desktop-full
+WORKDIR /piWatch-ros
+COPY ./piWatch-ros /piWatch-ros
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-opencv \
+    python3-picamera \
+    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && rosdep update && apt-get install -y \
+    ros-noetic-<paquete1> \
+    ros-noetic-<paquete2> \
+    # Agrega otros paquetes ROS que necesites
+    && rm -rf /var/lib/apt/lists/*
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+
+RUN pip3 install RPi.GPIO
+
+EXPOSE 11311
+CMD ["bash", "-c", "source /opt/ros/noetic/setup.bash && roscore"]

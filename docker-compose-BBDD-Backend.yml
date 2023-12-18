@@ -28,8 +28,10 @@ services:
     volumes:
       - .:/app 
   ros:
+    build:
+      context: .
+      dockerfile: DockerfileRos
     container_name: piwatch_ros
-    image: osrf/ros:noetic-desktop-full
     restart: always
     command: bash -c "source /opt/ros/noetic/setup.bash && roscore"
     ports:

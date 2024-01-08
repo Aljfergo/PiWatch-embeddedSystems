@@ -1,2 +1,0 @@
-
--DCATKIN_DEVEL_PREFIX=/home/diego/PiWatch-embeddedSystems/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/diego/PiWatch-embeddedSystems/catkin_ws/install -G Unix Makefiles
